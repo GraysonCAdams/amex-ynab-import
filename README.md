@@ -17,6 +17,8 @@ You must supply the variables below. The budget ID can be found when logged into
 
 You can put this in a `.env` file or supply as environment variables normally.
 
+`LOCAL=true` This is what determines if you are running a headless browser or not. Be careful running headless, it's glitchier, and American Express may think you're nefarious (when you just want your stinkin' transactions!)
+
 ```
 API_TOKEN=ynabapitokenhere
 BUDGET_ID=123123-0b123-12a1-1a23-123b1a234a
@@ -29,3 +31,7 @@ IMAP_INCOMING_HOST=imap.domain.com
 IMAP_INCOMING_PORT=993
 IMAP_TLS=true
 ```
+
+### One more note...
+
+Please be responsible, and don't try to run this every 5 minutes. I get that it's fun, but the last thing you want is an IP ban from American Express. Just run this once a day, like Plaid would if it would ever work. Hopefully OAuth rolls out soon.
