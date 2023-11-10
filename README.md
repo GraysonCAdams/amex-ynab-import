@@ -1,5 +1,7 @@
 # AMEX YNAB Import
 
+Unreliable connections over the course of the last few years means taking matters into our own hands. Other tools I found are still a bit of a manual process, downloading CSV's or QFX files and converting them to then upload them. This tool is meant to go the whole nine yards, and do every step for you with just one command.
+
 ```
 $ npm run start
 
@@ -42,8 +44,6 @@ Gold may have some transactions imported
 Importing 22 transactions to YNAB (it will ignore duplicate imports, so actual amount may differ)
 All done. Until next time! 👋
 ```
-
-Unreliable connections over the course of the last few years means taking matters into our own hands. Other tools I found are still a bit of a manual process, downloading CSV's or QFX files and converting them to then upload them. This tool is meant to go the whole nine yards, and do every step for you with just one command.
 
 When you run this script, it:
 
