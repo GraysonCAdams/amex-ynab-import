@@ -37,7 +37,6 @@ Found accounts: Blue Business Plus, Charles Schwab Platinum, Gold
 [✓] Fetched Charles Schwab Platinum CSV
 [..] Fetching Gold CSV
 [✓] Fetched Gold CSV
-There is no YNAB account named "Blue Business Plus". Rename appropriate YNAB account to link.
 Charles Schwab Platinum may have some transactions imported
 Gold may have some transactions imported
 Importing 22 transactions to YNAB (it will ignore duplicate imports, so actual amount may differ)
