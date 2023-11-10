@@ -1,7 +1,47 @@
 # AMEX YNAB Import
 
 ```
-npm run start
+$ npm run start
+
+> start
+> node --no-warnings=ExperimentalWarning --import=./logError.js --loader ts-node/esm index.ts
+
+Found YNAB accounts:
+ - Venmo
+ - Checking
+ - Savings
+ - Blue Business Plus
+ - Gold
+ - Charles Schwab Platinum
+ - Amazon
+
+Going to American Express to fetch your CSV files and match to YNAB accounts by name
+Pulling up American Express...
+Filling login credentials...
+Submitting...
+Opting out of mobile push notification...
+Waiting for OTP prompt... (will choose email)
+Connecting to mail server...
+Successfully connected to mail server!
+Opening mailbox...
+Mailbox opened
+Clicking the "Email" OTP button...
+Watching for new emails...
+1 new email(s), scanning contents...
+Found the OTP email
+Discarded email now that it's cached
+Found accounts: Blue Business Plus, Charles Schwab Platinum, Gold
+[..] Fetching Blue Business Plus CSV
+[✓] Fetched Blue Business Plus CSV
+[..] Fetching Charles Schwab Platinum CSV
+[✓] Fetched Charles Schwab Platinum CSV
+[..] Fetching Gold CSV
+[✓] Fetched Gold CSV
+There is no YNAB account named "Blue Business Plus". Rename appropriate YNAB account to link.
+Charles Schwab Platinum may have some transactions imported
+Gold may have some transactions imported
+Importing 22 transactions to YNAB (it will ignore duplicate imports, so actual amount may differ)
+All done. Until next time! 👋
 ```
 
 Unreliable connections over the course of the last few years means taking matters into our own hands. Other tools I found are still a bit of a manual process, downloading CSV's or QFX files and converting them to then upload them. This tool is meant to go the whole nine yards, and do every step for you with just one command.
