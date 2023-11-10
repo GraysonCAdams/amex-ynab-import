@@ -1,5 +1,7 @@
 # AMEX YNAB Import
 
+**If you use this, unlink your accounts on YNAB first, otherwise Plaid may add duplicates.**
+
 Unreliable connections over the course of the last few years means taking matters into our own hands. Other tools I found are still a bit of a manual process, downloading CSV's or QFX files and converting them to then upload them. This tool is meant to go the whole nine yards, and do every step for you with just one command.
 
 ```
