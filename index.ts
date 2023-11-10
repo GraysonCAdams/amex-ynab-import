@@ -64,7 +64,9 @@ import { convertCSV, createTransactions, fetchAccounts } from "./ynab.js";
     await createTransactions(transactions);
 
     console.log("All done. Until next time! 👋");
+    process.exit(0);
   } catch (e) {
     console.error(e);
+    process.exit(-1);
   }
 })();
