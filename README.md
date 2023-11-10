@@ -15,6 +15,8 @@ Being zero input and stateless, this script requires your YNAB AMEX accounts to 
 
 You must supply the variables below. The budget ID can be found when logged into YNAB in your URL bar, and for the token you will need to create a YNAB API token. IMAP information is for the OTP flow, **and you will need to make sure email is enabled for your OTP options on your AMEX account**.
 
+You can put this in a `.env` file or supply as environment variables normally.
+
 ```
 API_TOKEN=ynabapitokenhere
 BUDGET_ID=123123-0b123-12a1-1a23-123b1a234a
