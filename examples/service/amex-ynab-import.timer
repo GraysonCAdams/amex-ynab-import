@@ -1,3 +1,9 @@
+[Unit]
+Description=AMEX YNAB Import Timer
+
 [Timer]
-# Schedule the service to run at noon and midnight every day
 OnCalendar=*-*-* 12,0:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
