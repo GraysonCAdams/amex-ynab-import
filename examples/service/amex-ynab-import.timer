@@ -3,7 +3,8 @@ Description=AMEX YNAB Import Timer
 
 [Timer]
 OnCalendar=*-*-* 12,0:00:00
-Persistent=true
+TimeZone=America/Chicago  # Adjust the timezone as needed
+Persistent=false
 
 [Install]
 WantedBy=timers.target
