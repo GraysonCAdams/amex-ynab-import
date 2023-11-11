@@ -2,4 +2,4 @@
 _Dockerfile_
 _docker-compose_
 node_modules
-*.service
+service

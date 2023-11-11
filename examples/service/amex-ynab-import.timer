@@ -1,0 +1,3 @@
+[Timer]
+# Schedule the service to run at noon and midnight every day
+OnCalendar=*-*-* 12,0:00:00
