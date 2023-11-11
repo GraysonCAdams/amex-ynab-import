@@ -37,6 +37,7 @@ const downloadCSV = async (
   account: Account
 ): Promise<Readable> => {
   delete headers["vary"]; // sometimes character issues, not needed
+  delete headers["set-cookie"]; // sometimes character issues, not needed
 
   console.log(`[..] Fetching ${account.name} CSV`);
   const csv = await axios.get(
