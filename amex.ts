@@ -9,6 +9,8 @@ import _ from "lodash";
 import axios from "axios";
 import { HTTPResponse } from "puppeteer";
 import { Readable } from "stream";
+// @ts-ignore
+import Xvfb from "xvfb";
 
 export interface AMEXCSVTransaction {
   Date: string;
@@ -107,20 +109,43 @@ const getAccounts = (html: string): Account[] => {
 export async function fetchTransactions(): Promise<Account[]> {
   let accounts: Account[] = [];
 
+  const virtualDisplay = process.env.LOCAL !== "true";
+
   const username = process.env.AMEX_USER;
   const password = process.env.AMEX_PASS;
   if (!username || !password)
     throw new Error("You must provide Amex user and password to fetch data.");
 
   puppeteer.use(StealthPlugin());
+  const args = [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--start-fullscreen",
+  ];
+
+  let xvfb;
+  if (virtualDisplay) {
+    xvfb = new Xvfb({
+      silent: true,
+      xvfb_args: ["-screen", "0", "1280x720x24", "-ac"],
+    });
+
+    xvfb.start((err: Error) => {
+      if (err) console.error(err);
+    });
+  }
 
   const browser = await puppeteer.launch({
-    headless: process.env.LOCAL === "true" ? false : "new", // for SS bug: https://developer.chrome.com/articles/new-headless/
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    headless: false, // for SS bug: https://developer.chrome.com/articles/new-headless/
+    defaultViewport: null, //otherwise it defaults to 800x600
+    args,
   });
 
   try {
     const page = await browser.newPage();
+    page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0"
+    );
 
     console.log("Pulling up American Express...");
     await page.goto(
@@ -128,18 +153,19 @@ export async function fetchTransactions(): Promise<Account[]> {
     );
 
     console.log("Filling login credentials...");
-
     await page.type("#eliloUserID", username);
     await page.type("#eliloPassword", password);
 
     console.log("Submitting...");
     await page.click("#loginSubmit");
 
-    await page.waitForSelector("#changeMethod");
+    console.log("Waiting for prompt to choose other OTP option...");
+    await page.waitForSelector("#changeMethod", { timeout: 10000 });
+
     console.log("Opting out of mobile push notification...");
     await page.click("#changeMethod");
 
-    console.log("Waiting for OTP prompt... (will choose email)");
+    console.log("Searching/waiting for OTP prompt... (will choose email)");
     const authDivSelector =
       'div[class^="one-identity-authentication__styles__authContainer___"]';
     await page.waitForSelector(authDivSelector);
@@ -238,5 +264,7 @@ export async function fetchTransactions(): Promise<Account[]> {
   } finally {
     if (browser.connected) await browser.close();
   }
+
+  if (virtualDisplay && xvfb) xvfb.stop();
   return accounts;
 }

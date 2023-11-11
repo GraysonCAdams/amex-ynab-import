@@ -1,0 +1,21 @@
+[Unit]
+Description=AMEX YNAB Import
+
+[Service]
+Type=simple
+User=root
+Restart=on-failure
+RestartSec=1m
+StartLimitBurst=1
+StartLimitInterval=5m
+
+ExecStart=/usr/bin/docker run \
+  --rm \
+  --env-file /etc/systemd/environment/amex-ynab-env.env \
+  ghcr.io/graysoncadams/amex-ynab-import:latest
+
+# Schedule the service to run at noon and midnight every day
+OnCalendar=*-*-* 12,0:00:00
+
+[Install]
+WantedBy=default.target
