@@ -2,6 +2,7 @@ import { Readable } from "stream";
 import csv from "csv-parser";
 import { AMEXCSVTransaction } from "./amex.js";
 import ynab, { Account as YNABAccount, SaveTransaction } from "ynab";
+import { titleCase } from "title-case";
 import dateFormat from "dateformat";
 import "dotenv/config";
 
@@ -62,7 +63,7 @@ export const convertCSV = async (
             account_id: accountId,
             approved: false,
             cleared: "cleared",
-            payee_name: t.Description,
+            payee_name: titleCase(t.Description),
             amount,
             date,
           };

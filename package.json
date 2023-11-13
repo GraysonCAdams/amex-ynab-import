@@ -16,6 +16,7 @@
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "quoted-printable": "^1.0.1",
+    "title-case": "^4.1.2",
     "vm": "^0.1.0",
     "xvfb": "^0.4.0",
     "ynab": "^2.2.0"
