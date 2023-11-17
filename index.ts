@@ -2,6 +2,7 @@ import "dotenv/config";
 import { fetchTransactions } from "./amex.js";
 import { convertCSV, createTransactions, fetchAccounts } from "./ynab.js";
 import axios from "axios";
+import fs from "fs";
 
 (async () => {
   try {
@@ -60,7 +61,7 @@ import axios from "axios";
     console.log(
       `Importing ${transactions.length} transactions to YNAB (it will ignore duplicate imports, so actual amount may differ)`
     );
-
+    
     // @ts-ignore
     await createTransactions(transactions);
 

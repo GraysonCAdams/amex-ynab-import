@@ -2,7 +2,7 @@ import { Readable } from "stream";
 import csv from "csv-parser";
 import { AMEXCSVTransaction } from "./amex.js";
 import ynab, { Account as YNABAccount, SaveTransaction } from "ynab";
-import { titleCase } from "title-case";
+import titleize from "titleize";
 import dateFormat from "dateformat";
 import "dotenv/config";
 
@@ -19,7 +19,7 @@ if (!budgetId) throw new Error("You must provide the YNAB budget ID");
 
 const ynabAPI = new ynab.API(apiToken);
 
-const ynabAmount = (amount: string) => -parseFloat(amount) * 1000;
+const ynabAmount = (amount: string) => Math.round(-parseFloat(amount) * 1000);
 const ynabDateFormat = (date: Date) => dateFormat(date, "yyyy-mm-dd");
 
 export const fetchAccounts = async (): Promise<Account[]> => {
@@ -63,7 +63,7 @@ export const convertCSV = async (
             account_id: accountId,
             approved: false,
             cleared: "cleared",
-            payee_name: titleCase(t.Description),
+            payee_name: titleize(t.Description).split("  ")[0],
             amount,
             date,
           };
