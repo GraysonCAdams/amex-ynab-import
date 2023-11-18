@@ -68,16 +68,6 @@ import fs from "fs";
     console.log("All done. Until next time! 👋");
     process.exit(0);
   } catch (e) {
-    if (process.env.WEBHOOK_URL && process.env.LOCAL !== "true") {
-      try {
-        await axios.post(process.env.WEBHOOK_URL, {
-          message: "There was an issue syncing transactions.",
-          title: "AMEX YNAB Import",
-        });
-      } catch (e) {
-        console.error("Failed to send webhook.");
-      }
-    }
     console.error(e);
     process.exit(1);
   }
