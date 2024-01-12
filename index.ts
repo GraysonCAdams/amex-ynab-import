@@ -38,12 +38,6 @@ import fs from "fs";
         amexAccount.transactions,
         ynabAccount.id
       );
-
-      if (ynabAccount.last_reconciled_at)
-        ynabAccount.pendingTransactions =
-          ynabAccount.pendingTransactions.filter(
-            (t) => new Date(t.date!) >= ynabAccount.last_reconciled_at!
-          );
     }
 
     const readyAccounts = ynabAccounts.filter(
@@ -61,7 +55,7 @@ import fs from "fs";
     console.log(
       `Importing ${transactions.length} transactions to YNAB (it will ignore duplicate imports, so actual amount may differ)`
     );
-    
+
     // @ts-ignore
     await createTransactions(transactions);
 
