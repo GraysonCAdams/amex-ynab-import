@@ -316,7 +316,7 @@ export async function fetchTransactions(): Promise<Account[]> {
   return accounts;
 }
 
-type PendingTransaction = {
+export type PendingTransaction = {
   identifier: string;
   description: string;
   charge_date: string;

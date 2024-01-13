@@ -1,18 +1,26 @@
 import "dotenv/config";
-import { fetchTransactions } from "./amex.js";
-import { convertCSV, createTransactions, fetchAccounts } from "./ynab.js";
+import * as amex from "./amex.js";
+import {
+  convertCSV,
+  convertPendingTransactions,
+  fetchTransactions,
+  createTransactions,
+  fetchAccounts,
+  deleteTransaction,
+} from "./ynab.js";
 import axios from "axios";
 import fs from "fs";
 
 (async () => {
   try {
     const ynabAccounts = await fetchAccounts();
+    const ynabTransactions = await fetchTransactions();
 
     console.log(
       "Going to American Express to fetch your CSV files and match to YNAB accounts by name"
     );
 
-    const amexAccounts = await fetchTransactions();
+    const amexAccounts = await amex.fetchTransactions();
     if (amexAccounts.length == 0) throw new Error("Something has gone awry.");
 
     for (const amexAccount of amexAccounts) {
@@ -27,37 +35,64 @@ import fs from "fs";
         continue;
       }
 
-      if (!amexAccount.transactions) {
-        console.warn(
-          `There are no transactions found for Amex account ${amexAccount.name}`
-        );
-        continue;
-      }
+      const csvTransactions = amexAccount.transactions
+        ? await convertCSV(amexAccount.transactions, ynabAccount.id)
+        : [];
 
-      ynabAccount.pendingTransactions = await convertCSV(
-        amexAccount.transactions,
-        ynabAccount.id
-      );
+      const pendingTransactions = amexAccount.pendingTransactions
+        ? await convertPendingTransactions(
+            amexAccount.pendingTransactions,
+            ynabAccount.id
+          )
+        : [];
+
+      ynabAccount.queuedTransactions = [
+        ...csvTransactions,
+        ...pendingTransactions,
+      ];
     }
 
     const readyAccounts = ynabAccounts.filter(
-      (ynabAccount) => ynabAccount.pendingTransactions
+      (ynabAccount) => ynabAccount.queuedTransactions.length > 0
     );
 
     readyAccounts.forEach((ynabAccount) => {
       console.log(`${ynabAccount.name} may have some transactions imported`);
     });
 
-    const transactions = readyAccounts
-      .map((ynabAccount) => ynabAccount.pendingTransactions)
+    /*
+     * TODO: Collect YNAB pending transactions (labeled)... compare against
+     * current pending transactions, remove the ones that don't match from YNAB,
+     * add the ones that are not in YNAB
+     */
+
+    const newTransactions = readyAccounts
+      .map((ynabAccount) => ynabAccount.queuedTransactions)
       .flat();
 
+    const notLongerPendingTransactions = ynabTransactions.filter(
+      (oldTransaction) =>
+        oldTransaction.flag_color === "blue" &&
+        !newTransactions.find(
+          (newTransaction) =>
+            newTransaction.import_id === oldTransaction.import_id &&
+            newTransaction.flag_color === "blue"
+        )
+    );
+
+    for (const transaction of notLongerPendingTransactions) {
+      console.log(
+        `Deleting transaction ${transaction.id} / ${transaction.import_id} from ${transaction.account_name}`
+      );
+      await deleteTransaction(transaction.id);
+    }
+
     console.log(
-      `Importing ${transactions.length} transactions to YNAB (it will ignore duplicate imports, so actual amount may differ)`
+      `Importing ${newTransactions.length} transactions to YNAB (it will ignore duplicate imports, so actual amount may differ)`
     );
 
     // @ts-ignore
-    await createTransactions(transactions);
+    await createTransactions(newTransactions);
 
     console.log("All done. Until next time! 👋");
     process.exit(0);
