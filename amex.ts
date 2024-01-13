@@ -28,8 +28,47 @@ export interface AMEXCSVTransaction {
 interface Account {
   name?: string;
   key?: string;
+  token?: string;
   transactions?: Readable;
+  pendingTransactions?: PendingTransaction[];
 }
+
+const fetchPendingTransactions = async (
+  cookiesString: string,
+  account: Account
+): Promise<PendingTransaction[]> => {
+  console.log(`[..] Fetching ${account.name} pending transactions`);
+  const headers = {
+    cookie: cookiesString,
+    account_token: account.token,
+    authority: "global.americanexpress.com",
+    accept: "application/json",
+    "accept-language": "en-US,en;q=0.9",
+    "cache-control": "no-cache",
+    "content-type": "application/json",
+    correlation_id: "MYCA-7f1741cc-f636-4868-8c5b-012f09c5d7dd",
+    pragma: "no-cache",
+    referer: `https://global.americanexpress.com/activity/recent?account_key=${account.key}`,
+    "sec-ch-ua":
+      '"Not_A Brand";v="8", "Chromium";v="120", "Microsoft Edge";v="120"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"macOS"',
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "user-agent":
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+  };
+  const data = (await axios.get(
+    `https://global.americanexpress.com/api/servicing/v1/financials/transactions?limit=1000&status=pending&extended_details=merchant,category,tags,rewards,offer,deferred_details,receipts,flags,plan_details,transaction_codes`,
+    { headers }
+  )) as any;
+  const pendingTransactions = data.data.transactions;
+  console.log(
+    `[✓] Fetched ${pendingTransactions.length} ${account.name} pending transactions`
+  );
+  return pendingTransactions;
+};
 
 const downloadCSV = async (
   headers: Record<string, string>,
@@ -92,8 +131,11 @@ const getAccounts = (html: string): Account[] => {
         case "account_key":
           newProduct.key = value;
           break;
+        case "account_token":
+          newProduct.token = value;
+          break;
       }
-      if (newProduct.key && newProduct.name) {
+      if (newProduct.key && newProduct.name && newProduct.token) {
         accountsList.push(newProduct);
         newProduct = undefined;
       }
@@ -254,6 +296,10 @@ export async function fetchTransactions(): Promise<Account[]> {
           cookiesString,
           account
         );
+        account.pendingTransactions = await fetchPendingTransactions(
+          cookiesString,
+          account
+        );
       } catch (e) {
         console.error(
           `Something went wrong downloading the CSV for ${account.name}: ${e}`
@@ -269,3 +315,52 @@ export async function fetchTransactions(): Promise<Account[]> {
   if (virtualDisplay && xvfb) xvfb.stop();
   return accounts;
 }
+
+type PendingTransaction = {
+  identifier: string;
+  description: string;
+  charge_date: string;
+  supplementary_index: string;
+  amount: number;
+  type: string;
+  reference_id: string;
+  first_name: string;
+  last_name: string;
+  embossed_name: string;
+  account_token: string;
+  charge_timestamp: string;
+  extended_details: {
+    merchant: {
+      identifier: string;
+      chain_affiliated_identifier: string;
+      name: string;
+      address: {
+        address_lines: string[];
+        country_name: string;
+        postal_code: string;
+        city: string;
+        state: string;
+      };
+      display_name: string;
+      phone_number: string;
+      merchant_url: string;
+      additional_url: string;
+      store_front_indicator: boolean;
+      map_eligibility_indicator: boolean;
+      geo_location: {
+        latitude: string;
+        longitude: string;
+      };
+    };
+    additional_description_lines: string[];
+    category: {
+      category_name: string;
+      subcategory_name: string;
+      category_code: string;
+      subcategory_code: string;
+    };
+    rewards: {
+      display_indicator: string;
+    };
+  };
+};
