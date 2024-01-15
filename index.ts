@@ -7,9 +7,12 @@ import {
   createTransactions,
   fetchAccounts,
   deleteTransaction,
+  ynabAPI,
+  budgetId,
 } from "./ynab.js";
 import axios from "axios";
 import fs from "fs";
+import { TransactionDetail } from "ynab";
 
 (async () => {
   try {
@@ -66,23 +69,50 @@ import fs from "fs";
      * add the ones that are not in YNAB
      */
 
+    const formatTransaction = (t: TransactionDetail) =>
+      `${t.account_name}: $${t.amount / 1000} at ${t.payee_name} on ${t.date}`;
+
     const newTransactions = readyAccounts
       .map((ynabAccount) => ynabAccount.queuedTransactions)
       .flat();
 
-    const notLongerPendingTransactions = ynabTransactions.filter(
-      (oldTransaction) =>
-        oldTransaction.flag_color === "blue" &&
-        !newTransactions.find(
-          (newTransaction) =>
-            newTransaction.import_id === oldTransaction.import_id &&
-            newTransaction.flag_color === "blue"
-        )
-    );
+    const deleteTransactions = [];
 
-    for (const transaction of notLongerPendingTransactions) {
+    for (const transaction of ynabTransactions.filter(
+      (t) => t.flag_color === "blue" && !t.deleted && t.import_id
+    )) {
+      const matchedTransaction = newTransactions.find(
+        (newTransaction) =>
+          newTransaction.amount === transaction.amount &&
+          transaction.payee_name
+            ?.toLowerCase()
+            .includes(newTransaction.payee_name?.toLowerCase()!)
+      );
+
+      if (!matchedTransaction) {
+        deleteTransactions.push(transaction);
+        continue;
+      } else if (matchedTransaction.flag_color !== "blue") {
+        console.log(
+          `Transaction ${formatTransaction(transaction)} posted, updating...`
+        );
+        await ynabAPI.transactions.updateTransaction(
+          budgetId!,
+          transaction.id,
+          {
+            transaction: {
+              flag_color: null,
+              cleared: "cleared",
+              approved: false,
+            },
+          }
+        );
+      }
+    }
+
+    for (const transaction of deleteTransactions) {
       console.log(
-        `Deleting transaction ${transaction.id} / ${transaction.import_id} from ${transaction.account_name}`
+        `Deleting stale pending transaction ${formatTransaction(transaction)}`
       );
       await deleteTransaction(transaction.id);
     }

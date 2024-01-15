@@ -19,10 +19,10 @@ export interface Account extends Omit<YNABAccount, "last_reconciled_at"> {
 const apiToken = process.env.YNAB_API_KEY;
 if (!apiToken) throw new Error("You must provide the YNAB API token");
 
-const budgetId = process.env.BUDGET_ID;
+export const budgetId = process.env.BUDGET_ID;
 if (!budgetId) throw new Error("You must provide the YNAB budget ID");
 
-const ynabAPI = new ynab.API(apiToken);
+export const ynabAPI = new ynab.API(apiToken);
 
 const ynabAmount = (amount: string) => Math.round(-parseFloat(amount) * 1000);
 const ynabDateFormat = (date: Date) => dateFormat(date, "yyyy-mm-dd");

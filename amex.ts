@@ -184,134 +184,119 @@ export async function fetchTransactions(): Promise<Account[]> {
     args,
   });
 
-  try {
-    const page = await browser.newPage();
-    page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0"
-    );
+  const page = await browser.newPage();
+  page.setUserAgent(
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0"
+  );
 
-    console.log("Pulling up American Express...");
-    await page.goto(
-      "https://www.americanexpress.com/en-us/account/login/?inav=iNavLnkLog"
-    );
+  console.log("Pulling up American Express...");
+  await page.goto(
+    "https://www.americanexpress.com/en-us/account/login/?inav=iNavLnkLog"
+  );
 
-    console.log("Filling login credentials...");
-    await page.type("#eliloUserID", username);
-    await page.type("#eliloPassword", password);
+  console.log("Filling login credentials...");
+  await page.type("#eliloUserID", username);
+  await page.type("#eliloPassword", password);
 
-    console.log("Submitting...");
-    await page.click("#loginSubmit");
+  console.log("Submitting...");
+  await page.click("#loginSubmit");
 
-    console.log("Waiting for prompt to choose other OTP option...");
-    await page.waitForSelector("#changeMethod", { timeout: 10000 });
+  console.log("Waiting for prompt to choose other OTP option...");
+  await page.waitForSelector("#changeMethod", { timeout: 10000 });
 
-    console.log("Opting out of mobile push notification...");
-    await page.click("#changeMethod");
+  console.log("Opting out of mobile push notification...");
+  await page.click("#changeMethod");
 
-    console.log("Searching/waiting for OTP prompt... (will choose email)");
-    const authDivSelector =
-      'div[class^="one-identity-authentication__styles__authContainer___"]';
-    await page.waitForSelector(authDivSelector);
+  console.log("Searching/waiting for OTP prompt... (will choose email)");
+  const authDivSelector =
+    'div[class^="one-identity-authentication__styles__authContainer___"]';
+  await page.waitForSelector(authDivSelector);
 
-    let html = await page.content();
-    let $ = load(html);
+  let html = await page.content();
+  let $ = load(html);
 
-    let emailAuthBtnIndex: number | undefined;
-    const otpButtonsDOM = $(authDivSelector)
-      .find('button[data-testid="option-button"]')
-      .toArray();
-    for (const [i, button] of otpButtonsDOM.entries()) {
-      const html = $(button).html();
-      if (html && html.includes("One-time password (email)")) {
-        emailAuthBtnIndex = i;
-        break;
-      }
+  let emailAuthBtnIndex: number | undefined;
+  const otpButtonsDOM = $(authDivSelector)
+    .find('button[data-testid="option-button"]')
+    .toArray();
+  for (const [i, button] of otpButtonsDOM.entries()) {
+    const html = $(button).html();
+    if (html && html.includes("One-time password (email)")) {
+      emailAuthBtnIndex = i;
+      break;
     }
-
-    if (emailAuthBtnIndex === undefined)
-      throw new Error(
-        "Could not find email choice for OTP option. Is it enabled on your account?"
-      );
-
-    const mailbox = new EmailScanner();
-    await mailbox.connect();
-
-    console.log('Clicking the "Email" OTP button...');
-    const otpButtons = await page.$$(`${authDivSelector} button`);
-    await otpButtons[emailAuthBtnIndex].click();
-
-    const waitForEmail = mailbox.waitForEmail(
-      (email: Email) =>
-        email.subject === "Your American Express one-time verification code"
-    );
-
-    const email = await Promise.race([timeout(60000, false), waitForEmail]);
-    if (!email) throw new Error("OTP email was not received within 60 seconds");
-    mailbox.disconnect();
-
-    let code: string | undefined;
-    $ = load(email.body);
-    const text = $("body").text();
-    const textSplit = text.split("One-Time Verification Code:", 2);
-    if (textSplit.length == 2) {
-      const codeString = textSplit[1];
-      const codeMatches = codeString.match(/[0-9]+/g) || [];
-      const potentialCode = codeMatches[0];
-      if (potentialCode && potentialCode.length === 6) code = potentialCode;
-    }
-
-    if (!code) throw new Error("OTP code could not be extracted from email");
-
-    await page.type("#question-value", code);
-    await page.click('button[data-testid="continue-button"]');
-    const buttonGroupSelector =
-      ".one-identity-two-step-verification__style__buttonGroup___Lt-DI";
-    await page.waitForSelector(buttonGroupSelector);
-    await page.click(`${buttonGroupSelector} button`);
-    await page.setJavaScriptEnabled(false);
-
-    let headers = {};
-    const responseHandler = (response: HTTPResponse) => {
-      headers = response.headers();
-      page.off("response", responseHandler);
-    };
-    page.on("response", responseHandler);
-
-    await page.waitForNavigation({ waitUntil: "domcontentloaded" });
-
-    html = await page.content();
-    accounts = getAccounts(html);
-
-    const client = await page.target().createCDPSession();
-    const cookiesString = (await client.send("Network.getAllCookies")).cookies
-      .map((c) => `${c.name}=${c.value}`)
-      .join("; ");
-
-    await browser.close();
-
-    for (const account of accounts) {
-      try {
-        account.transactions = await downloadCSV(
-          headers,
-          cookiesString,
-          account
-        );
-        account.pendingTransactions = await fetchPendingTransactions(
-          cookiesString,
-          account
-        );
-      } catch (e) {
-        console.error(
-          `Something went wrong downloading the CSV for ${account.name}: ${e}`
-        );
-      }
-    }
-  } catch (e) {
-    console.error(e);
-  } finally {
-    if (browser.connected) await browser.close();
   }
 
+  if (emailAuthBtnIndex === undefined)
+    throw new Error(
+      "Could not find email choice for OTP option. Is it enabled on your account?"
+    );
+
+  const mailbox = new EmailScanner();
+  await mailbox.connect();
+
+  console.log('Clicking the "Email" OTP button...');
+  const otpButtons = await page.$$(`${authDivSelector} button`);
+  await otpButtons[emailAuthBtnIndex].click();
+
+  const waitForEmail = mailbox.waitForEmail(
+    (email: Email) =>
+      email.subject === "Your American Express one-time verification code"
+  );
+
+  const email = await Promise.race([timeout(60000, false), waitForEmail]);
+  if (!email) throw new Error("OTP email was not received within 60 seconds");
+  mailbox.disconnect();
+
+  let code: string | undefined;
+  $ = load(email.body);
+  const text = $("body").text();
+  const textSplit = text.split("One-Time Verification Code:", 2);
+  if (textSplit.length == 2) {
+    const codeString = textSplit[1];
+    const codeMatches = codeString.match(/[0-9]+/g) || [];
+    const potentialCode = codeMatches[0];
+    if (potentialCode && potentialCode.length === 6) code = potentialCode;
+  }
+
+  if (!code) throw new Error("OTP code could not be extracted from email");
+
+  await page.type("#question-value", code);
+  await page.click('button[data-testid="continue-button"]');
+  const buttonGroupSelector =
+    ".one-identity-two-step-verification__style__buttonGroup___Lt-DI";
+  await page.waitForSelector(buttonGroupSelector);
+  await page.click(`${buttonGroupSelector} button`);
+  await page.setJavaScriptEnabled(false);
+
+  let headers = {};
+  const responseHandler = (response: HTTPResponse) => {
+    headers = response.headers();
+    page.off("response", responseHandler);
+  };
+  page.on("response", responseHandler);
+
+  await page.waitForNavigation({ waitUntil: "domcontentloaded" });
+
+  html = await page.content();
+  accounts = getAccounts(html);
+
+  const client = await page.target().createCDPSession();
+  const cookiesString = (await client.send("Network.getAllCookies")).cookies
+    .map((c) => `${c.name}=${c.value}`)
+    .join("; ");
+
+  await browser.close();
+
+  for (const account of accounts) {
+    account.transactions = await downloadCSV(headers, cookiesString, account);
+    account.pendingTransactions = await fetchPendingTransactions(
+      cookiesString,
+      account
+    );
+  }
+
+  if (browser.connected) await browser.close();
   if (virtualDisplay && xvfb) xvfb.stop();
   return accounts;
 }
