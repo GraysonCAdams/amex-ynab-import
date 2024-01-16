@@ -79,20 +79,24 @@ import { TransactionDetail } from "ynab";
     const deleteTransactions = [];
 
     for (const transaction of ynabTransactions.filter(
-      (t) => t.flag_color === "blue" && !t.deleted && t.import_id
+      (t) => t.flag_color === "blue" && !t.deleted
+      // t.import_id
     )) {
       const matchedTransaction = newTransactions.find(
         (newTransaction) =>
+          newTransaction.date === transaction.date &&
           newTransaction.amount === transaction.amount &&
-          transaction.payee_name
-            ?.toLowerCase()
-            .includes(newTransaction.payee_name?.toLowerCase()!)
+          newTransaction.account_id === transaction.account_id
       );
 
-      if (!matchedTransaction) {
-        deleteTransactions.push(transaction);
-        continue;
-      } else if (matchedTransaction.flag_color !== "blue") {
+      if (matchedTransaction && matchedTransaction?.flag_color === "blue") {
+        console.log(
+          `Transaction ${formatTransaction(transaction)} still pending`
+        );
+      } else if (
+        matchedTransaction &&
+        matchedTransaction.flag_color !== "blue"
+      ) {
         console.log(
           `Transaction ${formatTransaction(transaction)} posted, updating...`
         );
@@ -106,6 +110,15 @@ import { TransactionDetail } from "ynab";
               approved: false,
             },
           }
+        );
+      } else if (!matchedTransaction) {
+        deleteTransactions.push(transaction);
+        continue;
+      } else {
+        console.log(
+          `Could not find an existing match for ${formatTransaction(
+            transaction
+          )}`
         );
       }
     }
