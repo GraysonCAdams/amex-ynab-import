@@ -72,7 +72,7 @@ import { TransactionDetail } from "ynab";
     const formatTransaction = (t: TransactionDetail) =>
       `${t.account_name}: $${t.amount / 1000} at ${t.payee_name} on ${t.date}`;
 
-    const newTransactions = readyAccounts
+    let newTransactions = readyAccounts
       .map((ynabAccount) => ynabAccount.queuedTransactions)
       .flat();
 
@@ -97,6 +97,9 @@ import { TransactionDetail } from "ynab";
         matchedTransaction &&
         matchedTransaction.flag_color !== "blue"
       ) {
+        newTransactions = newTransactions.filter(
+          (t) => t !== matchedTransaction
+        );
         console.log(
           `Transaction ${formatTransaction(transaction)} posted, updating...`
         );
