@@ -202,10 +202,15 @@ export async function fetchTransactions(): Promise<Account[]> {
   await page.click("#loginSubmit");
 
   console.log("Waiting for prompt to choose other OTP option...");
-  await page.waitForSelector("#changeMethod", { timeout: 10000 });
 
-  console.log("Opting out of mobile push notification...");
-  await page.click("#changeMethod");
+  try {
+    await page.waitForSelector("#changeMethod", { timeout: 10000 });
+    console.log("Opting out of mobile push notification...");
+    await page.click("#changeMethod");
+  } catch (e) {
+    console.error(e);
+    console.log("There was no change option, continuing...");
+  }
 
   console.log("Searching/waiting for OTP prompt... (will choose email)");
   const authDivSelector =
