@@ -83,14 +83,14 @@ import { SaveTransaction, TransactionDetail } from "ynab";
       // t.import_id
     )) {
       const matchedImportTransactions = transactionsToImport.filter(
-        (newTransaction) =>
+        (importTransaction) =>
           Math.abs(
-            new Date(newTransaction.date as string).getTime() -
+            new Date(importTransaction.date as string).getTime() -
               new Date(existingPendingTransaction.date as string).getTime()
           ) <=
             86400 * 2 * 1000 &&
-          newTransaction.amount === existingPendingTransaction.amount &&
-          newTransaction.account_id === existingPendingTransaction.account_id
+          importTransaction.amount === existingPendingTransaction.amount &&
+          importTransaction.account_id === existingPendingTransaction.account_id
       );
 
       if (matchedImportTransactions.length === 0) {
