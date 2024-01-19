@@ -12,7 +12,7 @@ import {
 } from "./ynab.js";
 import axios from "axios";
 import fs from "fs";
-import { TransactionDetail } from "ynab";
+import { SaveTransaction, TransactionDetail } from "ynab";
 
 (async () => {
   try {
@@ -72,40 +72,69 @@ import { TransactionDetail } from "ynab";
     const formatTransaction = (t: TransactionDetail) =>
       `${t.account_name}: $${t.amount / 1000} at ${t.payee_name} on ${t.date}`;
 
-    let newTransactions = readyAccounts
+    let transactionsToImport = readyAccounts
       .map((ynabAccount) => ynabAccount.queuedTransactions)
       .flat();
 
-    const deleteTransactions = [];
+    let deleteTransactions: TransactionDetail[] = [];
 
-    for (const transaction of ynabTransactions.filter(
+    for (const existingPendingTransaction of ynabTransactions.filter(
       (t) => t.flag_color === "blue" && !t.deleted
       // t.import_id
     )) {
-      const matchedTransaction = newTransactions.find(
+      const matchedImportTransactions = transactionsToImport.filter(
         (newTransaction) =>
-          newTransaction.date === transaction.date &&
-          newTransaction.amount === transaction.amount &&
-          newTransaction.account_id === transaction.account_id
+          Math.abs(
+            new Date(newTransaction.date as string).getTime() -
+              new Date(existingPendingTransaction.date as string).getTime()
+          ) <=
+            86400 * 2 * 1000 &&
+          newTransaction.amount === existingPendingTransaction.amount &&
+          newTransaction.account_id === existingPendingTransaction.account_id
       );
 
-      if (matchedTransaction && matchedTransaction?.flag_color === "blue") {
+      if (matchedImportTransactions.length === 0) {
+        deleteTransactions.push(existingPendingTransaction);
+        continue;
+      }
+
+      // We only care about the first one
+      const matchedImportTransaction = matchedImportTransactions[0];
+
+      // Remove the rest
+      const beforeSize = transactionsToImport.length;
+      transactionsToImport = transactionsToImport.filter(
+        (t) => !matchedImportTransactions.slice(1).includes(t)
+      );
+      const afterSize = transactionsToImport.length;
+
+      if (beforeSize > afterSize)
         console.log(
-          `Transaction ${formatTransaction(transaction)} still pending`
+          `Skipping ${
+            beforeSize - afterSize
+          } other duplicate transactions for ${formatTransaction(
+            existingPendingTransaction
+          )}`
         );
-      } else if (
-        matchedTransaction &&
-        matchedTransaction.flag_color !== "blue"
-      ) {
-        newTransactions = newTransactions.filter(
-          (t) => t !== matchedTransaction
+
+      if (matchedImportTransaction.flag_color === "blue") {
+        console.log(
+          `Transaction ${formatTransaction(
+            existingPendingTransaction
+          )} still pending`
+        );
+      } else {
+        transactionsToImport = transactionsToImport.filter(
+          (t) => t !== matchedImportTransaction
         );
         console.log(
-          `Transaction ${formatTransaction(transaction)} posted, updating...`
+          `Transaction ${formatTransaction(
+            existingPendingTransaction
+          )} posted, updating...`
         );
         await ynabAPI.transactions.updateTransaction(
           budgetId!,
-          transaction.id,
+          existingPendingTransaction.id,
           {
             transaction: {
               flag_color: null,
@@ -113,15 +142,6 @@ import { TransactionDetail } from "ynab";
               approved: false,
             },
           }
-        );
-      } else if (!matchedTransaction) {
-        deleteTransactions.push(transaction);
-        continue;
-      } else {
-        console.log(
-          `Could not find an existing match for ${formatTransaction(
-            transaction
-          )}`
         );
       }
     }
@@ -134,11 +154,11 @@ import { TransactionDetail } from "ynab";
     }
 
     console.log(
-      `Importing ${newTransactions.length} transactions to YNAB (it will ignore duplicate imports, so actual amount may differ)`
+      `Importing ${transactionsToImport.length} transactions to YNAB (it will ignore duplicate imports, so actual amount may differ)`
     );
 
     // @ts-ignore
-    await createTransactions(newTransactions);
+    await createTransactions(transactionsToImport);
 
     console.log("All done. Until next time! 👋");
     process.exit(0);
