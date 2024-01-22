@@ -63,12 +63,6 @@ import { SaveTransaction, TransactionDetail } from "ynab";
       console.log(`${ynabAccount.name} may have some transactions imported`);
     });
 
-    /*
-     * TODO: Collect YNAB pending transactions (labeled)... compare against
-     * current pending transactions, remove the ones that don't match from YNAB,
-     * add the ones that are not in YNAB
-     */
-
     const formatTransaction = (t: TransactionDetail) =>
       `${t.account_name}: $${t.amount / 1000} at ${t.payee_name} on ${t.date}`;
 

@@ -93,7 +93,7 @@ export const convertPendingTransactions = (
 
     ynabTransactions.push({
       ...data,
-      import_id: `YNAB-pending:${amount}:${date}:${occurrence + 1}`,
+      import_id: `YNAB-pending:${amount}:${date}:${t.identifier}`,
     });
   });
   return ynabTransactions;
