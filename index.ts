@@ -72,93 +72,76 @@ import { SaveTransaction, TransactionDetail } from "ynab";
     const formatTransaction = (t: TransactionDetail) =>
       `${t.account_name}: $${t.amount / 1000} at ${t.payee_name} on ${t.date}`;
 
-    let transactionsToImport = readyAccounts
+    const importTransactions = readyAccounts
       .map((ynabAccount) => ynabAccount.queuedTransactions)
       .flat();
 
-    let deleteTransactions: TransactionDetail[] = [];
+    const staleTransactions: TransactionDetail[] = [];
+    const pendingTransactionsThatPosted: TransactionDetail[] = [];
 
-    for (const existingPendingTransaction of ynabTransactions.filter(
+    const pendingExistingTransactions = ynabTransactions.filter(
       (t) => t.flag_color === "blue" && !t.deleted
-      // t.import_id
-    )) {
-      const matchedImportTransactions = transactionsToImport.filter(
-        (importTransaction) =>
+    );
+
+    for (const existingPendingTransaction of pendingExistingTransactions) {
+      const matchedImportTransaction = importTransactions.find(
+        (t) =>
+          t.amount === existingPendingTransaction.amount &&
+          t.payee_name === existingPendingTransaction.payee_name &&
           Math.abs(
-            new Date(importTransaction.date as string).getTime() -
+            new Date(t.date as string).getTime() -
               new Date(existingPendingTransaction.date as string).getTime()
           ) <=
-            86400 * 2 * 1000 &&
-          importTransaction.amount === existingPendingTransaction.amount &&
-          importTransaction.account_id === existingPendingTransaction.account_id
+            86400 * 3 * 1000
       );
-
-      if (matchedImportTransactions.length === 0) {
-        deleteTransactions.push(existingPendingTransaction);
-        continue;
-      }
-
-      // We only care about the first one
-      const matchedImportTransaction = matchedImportTransactions[0];
-
-      // Remove the rest
-      const beforeSize = transactionsToImport.length;
-      transactionsToImport = transactionsToImport.filter(
-        (t) => !matchedImportTransactions.slice(1).includes(t)
-      );
-      const afterSize = transactionsToImport.length;
-
-      if (beforeSize > afterSize)
-        console.log(
-          `Skipping ${
-            beforeSize - afterSize
-          } other duplicate transactions for ${formatTransaction(
-            existingPendingTransaction
-          )}`
-        );
-
-      if (matchedImportTransaction.flag_color === "blue") {
+      if (
+        matchedImportTransaction &&
+        matchedImportTransaction.flag_color === "blue"
+      ) {
         console.log(
           `Transaction ${formatTransaction(
             existingPendingTransaction
           )} still pending`
         );
-      } else {
-        transactionsToImport = transactionsToImport.filter(
-          (t) => t !== matchedImportTransaction
-        );
+        continue;
+      } else if (matchedImportTransaction) {
         console.log(
           `Transaction ${formatTransaction(
             existingPendingTransaction
-          )} posted, updating...`
+          )} posted. Copying over data to new transaction entry.`
         );
-        await ynabAPI.transactions.updateTransaction(
-          budgetId!,
-          existingPendingTransaction.id,
-          {
-            transaction: {
-              flag_color: null,
-              cleared: "cleared",
-              approved: false,
-            },
-          }
-        );
+        matchedImportTransaction.memo = existingPendingTransaction.memo;
+        matchedImportTransaction.approved = existingPendingTransaction.approved;
+        matchedImportTransaction.category_id =
+          existingPendingTransaction.category_id;
+        pendingTransactionsThatPosted.push(existingPendingTransaction);
+      } else {
+        staleTransactions.push(existingPendingTransaction);
       }
     }
 
-    for (const transaction of deleteTransactions) {
+    for (const transaction of staleTransactions) {
       console.log(
-        `Deleting stale pending transaction ${formatTransaction(transaction)}`
+        `Clearing out stale transaction ${formatTransaction(transaction)}`
+      );
+      await deleteTransaction(transaction.id);
+    }
+
+    for (const transaction of pendingTransactionsThatPosted) {
+      console.log(
+        `Clearing out pending transaction that posted: ${formatTransaction(
+          transaction
+        )}`
       );
       await deleteTransaction(transaction.id);
     }
 
     console.log(
-      `Importing ${transactionsToImport.length} transactions to YNAB (it will ignore duplicate imports, so actual amount may differ)`
+      `Importing ${importTransactions.length} transactions to YNAB (it will ignore duplicate imports, so actual amount may differ)`
     );
 
     // @ts-ignore
-    await createTransactions(transactionsToImport);
+    await createTransactions(importTransactions);
 
     console.log("All done. Until next time! 👋");
     process.exit(0);
