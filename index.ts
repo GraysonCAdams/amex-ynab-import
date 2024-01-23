@@ -110,8 +110,22 @@ import { SaveTransaction, TransactionDetail } from "ynab";
           )} posted. Copying over data to new transaction entry.`
         );
         matchedImportTransaction.memo = existingPendingTransaction.memo;
-        matchedImportTransaction.payee_name =
-          existingPendingTransaction.payee_name;
+
+        const bannedPayeeNameStarts = [
+          "Transfer : ",
+          "Starting Balance",
+          "Manual Balance Adjustment",
+          "Reconciliation Balance Adjustment",
+        ];
+
+        if (
+          !bannedPayeeNameStarts.some((payeeNameStart) =>
+            matchedImportTransaction.payee_name?.startsWith(payeeNameStart)
+          )
+        )
+          matchedImportTransaction.payee_name =
+            existingPendingTransaction.payee_name;
+
         matchedImportTransaction.approved = existingPendingTransaction.approved;
         matchedImportTransaction.category_id =
           existingPendingTransaction.category_id;
