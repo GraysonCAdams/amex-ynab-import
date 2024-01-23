@@ -81,7 +81,7 @@ import { SaveTransaction, TransactionDetail } from "ynab";
       const matchedImportTransaction = importTransactions.find(
         (t) =>
           t.amount === existingPendingTransaction.amount &&
-          t.payee_name === existingPendingTransaction.payee_name &&
+          t.payee_name === existingPendingTransaction.import_payee_name &&
           Math.abs(
             new Date(t.date as string).getTime() -
               new Date(existingPendingTransaction.date as string).getTime()
@@ -105,6 +105,8 @@ import { SaveTransaction, TransactionDetail } from "ynab";
           )} posted. Copying over data to new transaction entry.`
         );
         matchedImportTransaction.memo = existingPendingTransaction.memo;
+        matchedImportTransaction.payee_name =
+          existingPendingTransaction.payee_name;
         matchedImportTransaction.approved = existingPendingTransaction.approved;
         matchedImportTransaction.category_id =
           existingPendingTransaction.category_id;
