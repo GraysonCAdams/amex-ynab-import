@@ -71,7 +71,7 @@ export const convertPendingTransactions = (
   const ynabTransactions: SaveTransaction[] = [];
 
   pendingTransactions.forEach((t) => {
-    const amount = ynabAmount(t.amount.toString());
+    let amount = ynabAmount(t.amount.toString());
     const date = ynabDateFormat(new Date(t.charge_date));
 
     const data: SaveTransaction = {

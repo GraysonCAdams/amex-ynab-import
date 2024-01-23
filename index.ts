@@ -74,14 +74,19 @@ import { SaveTransaction, TransactionDetail } from "ynab";
     const pendingTransactionsThatPosted: TransactionDetail[] = [];
 
     const pendingExistingTransactions = ynabTransactions.filter(
-      (t) => t.flag_color === "blue" && !t.deleted
+      (t) =>
+        t.cleared === "uncleared" &&
+        !t.deleted &&
+        readyAccounts.find((account) => account.name === t.account_name)
     );
 
     for (const existingPendingTransaction of pendingExistingTransactions) {
       const matchedImportTransaction = importTransactions.find(
         (t) =>
           t.amount === existingPendingTransaction.amount &&
-          t.payee_name === existingPendingTransaction.import_payee_name &&
+          (!existingPendingTransaction.import_payee_name ||
+            t.payee_name?.trim() ===
+              existingPendingTransaction.import_payee_name.trim()) &&
           Math.abs(
             new Date(t.date as string).getTime() -
               new Date(existingPendingTransaction.date as string).getTime()
@@ -90,7 +95,7 @@ import { SaveTransaction, TransactionDetail } from "ynab";
       );
       if (
         matchedImportTransaction &&
-        matchedImportTransaction.flag_color === "blue"
+        matchedImportTransaction.cleared === "uncleared"
       ) {
         console.log(
           `Transaction ${formatTransaction(
