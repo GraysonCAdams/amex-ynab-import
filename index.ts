@@ -13,6 +13,7 @@ import {
 import axios from "axios";
 import fs from "fs";
 import { SaveTransaction, TransactionDetail } from "ynab";
+import stringSimilarity from "string-similarity";
 
 (async () => {
   try {
@@ -81,18 +82,36 @@ import { SaveTransaction, TransactionDetail } from "ynab";
     );
 
     for (const existingPendingTransaction of pendingExistingTransactions) {
-      const matchedImportTransaction = importTransactions.find(
-        (t) =>
-          t.amount === existingPendingTransaction.amount &&
-          (!existingPendingTransaction.import_payee_name ||
-            t.payee_name?.trim() ===
-              existingPendingTransaction.import_payee_name.trim()) &&
+      const matchedImportTransaction = importTransactions.find((t) => {
+        const dateMatch =
           Math.abs(
             new Date(t.date as string).getTime() -
               new Date(existingPendingTransaction.date as string).getTime()
           ) <=
-            86400 * 3 * 1000
-      );
+          86400 * 3 * 1000;
+
+        const amountMatch = t.amount === existingPendingTransaction.amount;
+
+        const cleanImportName = (payeeName: string) =>
+          payeeName.replace("Aplpay ", "").replace("Tst* ", "");
+
+        const importPayeeName = cleanImportName(t.payee_name!.trim());
+        const existingPayeeName = cleanImportName(
+          (
+            existingPendingTransaction.import_payee_name! ||
+            existingPendingTransaction.payee_name!
+          ).trim()
+        );
+
+        const payeeMatch =
+          importPayeeName === existingPayeeName ||
+          stringSimilarity.compareTwoStrings(
+            importPayeeName,
+            existingPayeeName
+          ) >= 0.65;
+
+        return dateMatch && amountMatch && payeeMatch;
+      });
       if (
         matchedImportTransaction &&
         matchedImportTransaction.cleared === "uncleared"
