@@ -14,6 +14,7 @@ import axios from "axios";
 import fs from "fs";
 import { SaveTransaction, TransactionDetail } from "ynab";
 import stringSimilarity from "string-similarity";
+import { match } from "assert";
 
 (async () => {
   try {
@@ -67,7 +68,7 @@ import stringSimilarity from "string-similarity";
     const formatTransaction = (t: TransactionDetail) =>
       `${t.account_name}: $${t.amount / 1000} at ${t.payee_name} on ${t.date}`;
 
-    const importTransactions = readyAccounts
+    let importTransactions = readyAccounts
       .map((ynabAccount) => ynabAccount.queuedTransactions)
       .flat();
 
@@ -121,6 +122,21 @@ import stringSimilarity from "string-similarity";
             existingPendingTransaction
           )} still pending`
         );
+
+        if (
+          existingPendingTransaction.date !== matchedImportTransaction.date ||
+          existingPendingTransaction.import_id !==
+            matchedImportTransaction.import_id
+        ) {
+          console.log(
+            `Pending transaction ${formatTransaction(
+              existingPendingTransaction
+            )} has changed date or import ID. Ignoring to prevent duplicate...`
+          );
+          importTransactions = importTransactions.filter(
+            (t) => t !== matchedImportTransaction
+          );
+        }
         continue;
       } else if (matchedImportTransaction) {
         console.log(
