@@ -109,7 +109,7 @@ import { match } from "assert";
           stringSimilarity.compareTwoStrings(
             importPayeeName,
             existingPayeeName
-          ) >= 0.65;
+          ) >= 0.25;
 
         return dateMatch && amountMatch && payeeMatch;
       });
