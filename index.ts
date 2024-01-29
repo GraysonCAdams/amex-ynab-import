@@ -144,7 +144,6 @@ import { match } from "assert";
             existingPendingTransaction
           )} posted. Copying over data to new transaction entry.`
         );
-        matchedImportTransaction.memo = existingPendingTransaction.memo;
 
         const bannedPayeeNameStarts = [
           "Transfer : ",
@@ -164,6 +163,7 @@ import { match } from "assert";
         matchedImportTransaction.approved = existingPendingTransaction.approved;
         matchedImportTransaction.category_id =
           existingPendingTransaction.category_id;
+        matchedImportTransaction.memo = existingPendingTransaction.memo;
         pendingTransactionsThatPosted.push(existingPendingTransaction);
       } else {
         staleTransactions.push(existingPendingTransaction);
