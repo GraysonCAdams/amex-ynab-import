@@ -139,12 +139,6 @@ import { match } from "assert";
         }
         continue;
       } else if (matchedImportTransaction) {
-        console.log(
-          `Transaction ${formatTransaction(
-            existingPendingTransaction
-          )} posted. Copying over data to new transaction entry.`
-        );
-
         const bannedPayeeNameStarts = [
           "Transfer : ",
           "Starting Balance",
@@ -164,6 +158,13 @@ import { match } from "assert";
         matchedImportTransaction.category_id =
           existingPendingTransaction.category_id;
         matchedImportTransaction.memo = existingPendingTransaction.memo;
+
+        console.log(
+          `Transaction ${formatTransaction(
+            existingPendingTransaction
+          )} posted. Copying over data to new transaction entry.`,
+          matchedImportTransaction
+        );
         pendingTransactionsThatPosted.push(existingPendingTransaction);
       } else {
         staleTransactions.push(existingPendingTransaction);
