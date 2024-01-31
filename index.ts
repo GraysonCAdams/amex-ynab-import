@@ -65,12 +65,37 @@ import { match } from "assert";
       console.log(`${ynabAccount.name} may have some transactions imported`);
     });
 
-    const formatTransaction = (t: TransactionDetail) =>
-      `${t.account_name}: $${t.amount / 1000} at ${t.payee_name} on ${t.date}`;
+    const formatTransaction = (t: TransactionDetail | SaveTransaction) =>
+      `${t.account_id}: $${t.amount! / 1000} at ${t.payee_name} on ${t.date}`;
 
-    let importTransactions = readyAccounts
+    const unfilteredImportTransactions = readyAccounts
       .map((ynabAccount) => ynabAccount.queuedTransactions)
       .flat();
+
+    let importTransactions: SaveTransaction[] =
+      unfilteredImportTransactions.reduce(
+        (transactions, parentTransaction) => {
+          const voidingTransaction = transactions.find(
+            (t) =>
+              t.cleared === "uncleared" &&
+              t.amount === -parentTransaction.amount! &&
+              t.payee_name === parentTransaction.payee_name &&
+              t.date === parentTransaction.date
+          );
+          if (voidingTransaction) {
+            console.log(
+              `Transaction ${formatTransaction(
+                parentTransaction
+              )} has a voiding transaction, ignoring...`
+            );
+            transactions = transactions.filter(
+              (t) => t !== voidingTransaction && t !== parentTransaction
+            );
+          }
+          return transactions;
+        },
+        [...unfilteredImportTransactions]
+      );
 
     const staleTransactions: TransactionDetail[] = [];
     const pendingTransactionsThatPosted: TransactionDetail[] = [];
