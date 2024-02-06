@@ -116,7 +116,15 @@ import { match } from "assert";
           ) <=
           86400 * 3 * 1000;
 
-        const amountMatch = t.amount === existingPendingTransaction.amount;
+        const existingCurrentAmount = existingPendingTransaction.amount;
+
+        const existingOriginalAmount = existingPendingTransaction.import_id
+          ? parseFloat(existingPendingTransaction.import_id.split(":")[1])
+          : existingCurrentAmount;
+
+        const amountMatch =
+          t.amount === existingCurrentAmount ||
+          (!t.cleared && t.amount === existingOriginalAmount);
 
         const cleanImportName = (payeeName: string) =>
           payeeName.replace("Aplpay ", "").replace("Tst* ", "");

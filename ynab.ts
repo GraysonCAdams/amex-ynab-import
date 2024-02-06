@@ -79,7 +79,6 @@ export const convertPendingTransactions = (
       approved: false,
       cleared: "uncleared",
       payee_name: titleize(t.description).split("  ")[0],
-      flag_color: "blue",
       amount,
       date,
     };

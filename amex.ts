@@ -79,8 +79,12 @@ const downloadCSV = async (
   delete headers["set-cookie"]; // sometimes character issues, not needed
 
   console.log(`[..] Fetching ${account.name} CSV`);
+  const startDate = new Date(new Date().getTime() - 86400 * 1000 * 10)
+    .toISOString()
+    .split("T")[0];
+  const endDate = new Date().toISOString().split("T")[0];
   const csv = await axios.get(
-    `https://global.americanexpress.com/api/servicing/v1/financials/documents?file_format=csv&limit=30&status=posted&account_key=${account.key}&client_id=AmexAPI`,
+    `https://global.americanexpress.com/api/servicing/v1/financials/documents?file_format=csv&start_date=${startDate}&end_date=${endDate}&limit=30&status=posted&account_key=${account.key}&client_id=AmexAPI`,
     { headers: { ...headers, Cookie: cookiesString } }
   );
   console.log(`[✓] Fetched ${account.name} CSV`);
