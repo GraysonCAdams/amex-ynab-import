@@ -183,6 +183,8 @@ import { match } from "assert";
         matchedImportTransaction.category_id =
           existingPendingTransaction.category_id;
         matchedImportTransaction.memo = existingPendingTransaction.memo;
+        matchedImportTransaction.subtransactions =
+          existingPendingTransaction.subtransactions;
 
         console.log(
           `Transaction ${formatTransaction(
