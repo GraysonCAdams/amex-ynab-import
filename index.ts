@@ -210,7 +210,21 @@ import { match } from "assert";
       console.log(
         `Clearing out stale transaction ${formatTransaction(transaction)}`
       );
-      await deleteTransaction(transaction.id);
+      if (
+        budgetId &&
+        transaction.flag_color !== "red" &&
+        transaction.subtransactions &&
+        transaction.subtransactions.length > 0
+      ) {
+        await ynabAPI.transactions.updateTransaction(budgetId, transaction.id, {
+          transaction: {
+            flag_color: "red",
+            memo: "Stale! Please review and remove",
+          },
+        });
+      } else {
+        await deleteTransaction(transaction.id);
+      }
     }
 
     for (const transaction of pendingTransactionsThatPosted) {
