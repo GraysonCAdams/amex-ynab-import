@@ -272,11 +272,18 @@ export async function fetchTransactions(): Promise<Account[]> {
 
   await page.type("#question-value", code);
   await page.click('button[data-testid="continue-button"]');
-  const buttonGroupSelector =
-    ".one-identity-two-step-verification__style__buttonGroup___Lt-DI";
-  await page.waitForSelector(buttonGroupSelector);
-  await page.click(`${buttonGroupSelector} button`);
-  await page.setJavaScriptEnabled(false);
+
+  try {
+    const buttonGroupSelector =
+      ".one-identity-two-step-verification__style__buttonGroup___Lt-DI";
+    await page.waitForSelector(buttonGroupSelector);
+    await page.click(`${buttonGroupSelector} button`);
+    await page.setJavaScriptEnabled(false);
+  } catch (e) {
+    console.error(e);
+    await page.setJavaScriptEnabled(false);
+    await page.reload();
+  }
 
   let headers = {};
   const responseHandler = (response: HTTPResponse) => {
