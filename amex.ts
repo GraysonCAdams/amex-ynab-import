@@ -276,13 +276,14 @@ export async function fetchTransactions(): Promise<Account[]> {
   try {
     const buttonGroupSelector =
       ".one-identity-two-step-verification__style__buttonGroup___Lt-DI";
-    await page.waitForSelector(buttonGroupSelector);
+    await page.waitForSelector(buttonGroupSelector, { timeout: 10000 });
     await page.click(`${buttonGroupSelector} button`);
     await page.setJavaScriptEnabled(false);
   } catch (e) {
     console.error(e);
+    console.log("Reloading page....");
     await page.setJavaScriptEnabled(false);
-    await page.reload();
+    await page.goto("https://global.americanexpress.com/dashboard");
   }
 
   let headers = {};
@@ -292,8 +293,14 @@ export async function fetchTransactions(): Promise<Account[]> {
   };
   page.on("response", responseHandler);
 
-  await page.waitForNavigation({ waitUntil: "domcontentloaded" });
-
+  try {
+    await page.waitForNavigation({
+      waitUntil: "domcontentloaded",
+      timeout: 15000,
+    });
+  } catch (e) {
+    console.error(e);
+  }
   html = await page.content();
   accounts = getAccounts(html);
 
