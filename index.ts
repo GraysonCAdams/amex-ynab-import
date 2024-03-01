@@ -194,6 +194,13 @@ import { match } from "assert";
         matchedImportTransaction.subtransactions =
           existingPendingTransaction.subtransactions;
 
+        if (
+          !["red", "orange", "yellow", "green", "blue", "purple"].includes(
+            matchedImportTransaction.flag_color || ""
+          )
+        )
+          matchedImportTransaction.flag_color = undefined;
+
         console.log(
           `Transaction ${formatTransaction(
             existingPendingTransaction
