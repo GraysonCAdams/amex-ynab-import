@@ -223,12 +223,20 @@ import { match } from "assert";
         transaction.subtransactions &&
         transaction.subtransactions.length > 0
       ) {
-        await ynabAPI.transactions.updateTransaction(budgetId, transaction.id, {
-          transaction: {
-            flag_color: "red",
-            memo: "Stale! Please review and remove",
-          },
-        });
+        try {
+          await ynabAPI.transactions.updateTransaction(
+            budgetId,
+            transaction.id,
+            {
+              transaction: {
+                flag_color: "red",
+                memo: "Stale! Please review and remove",
+              },
+            }
+          );
+        } catch (e) {
+          console.error("Unable to update stale transaction", e);
+        }
       } else {
         await deleteTransaction(transaction.id);
       }
