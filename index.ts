@@ -129,20 +129,26 @@ import { match } from "assert";
         const cleanImportName = (payeeName: string) =>
           payeeName.replace("Aplpay ", "").replace("Tst* ", "");
 
-        const importPayeeName = cleanImportName(t.payee_name!.trim());
-        const existingPayeeName = cleanImportName(
-          (
-            existingPendingTransaction.import_payee_name! ||
-            existingPendingTransaction.payee_name!
-          ).trim()
-        );
+        let payeeMatch = false;
 
-        const payeeMatch =
-          importPayeeName === existingPayeeName ||
-          stringSimilarity.compareTwoStrings(
-            importPayeeName,
-            existingPayeeName
-          ) >= 0.25;
+        let importPayeeName = t.payee_name;
+
+        let existingPayeeName =
+          existingPendingTransaction.import_payee_name ||
+          existingPendingTransaction.payee_name;
+
+        if (importPayeeName && existingPayeeName) {
+          importPayeeName = importPayeeName.trim();
+
+          existingPayeeName = cleanImportName(existingPayeeName);
+
+          payeeMatch =
+            importPayeeName === existingPayeeName ||
+            stringSimilarity.compareTwoStrings(
+              importPayeeName,
+              existingPayeeName
+            ) >= 0.25;
+        }
 
         return dateMatch && amountMatch && payeeMatch;
       });
