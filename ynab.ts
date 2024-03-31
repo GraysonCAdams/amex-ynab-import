@@ -10,6 +10,7 @@ import ynab, {
 import titleize from "titleize";
 import dateFormat from "dateformat";
 import "dotenv/config";
+import { formatTransaction } from "./index.js";
 
 export interface Account extends Omit<YNABAccount, "last_reconciled_at"> {
   last_reconciled_at?: Date;
@@ -27,8 +28,16 @@ export const ynabAPI = new ynab.API(apiToken);
 const ynabAmount = (amount: string) => Math.round(-parseFloat(amount) * 1000);
 const ynabDateFormat = (date: Date) => dateFormat(date, "yyyy-mm-dd");
 
-export const deleteTransaction = async (transactionId: string) => {
-  await ynabAPI.transactions.deleteTransaction(budgetId, transactionId);
+export const deleteTransaction = async (transaction: TransactionDetail) => {
+  try {
+    await ynabAPI.transactions.deleteTransaction(budgetId, transaction.id);
+  } catch (e) {
+    console.error(
+      "Failed to delete transaction",
+      formatTransaction(transaction),
+      e
+    );
+  }
 };
 
 export const fetchAccounts = async (): Promise<Account[]> => {

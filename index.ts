@@ -16,6 +16,11 @@ import { SaveTransaction, TransactionDetail } from "ynab";
 import stringSimilarity from "string-similarity";
 import { match } from "assert";
 
+
+export const formatTransaction = (t: TransactionDetail | SaveTransaction) =>
+  `${t.account_id}: $${t.amount! / 1000} at ${t.payee_name} on ${t.date}`;
+
+
 (async () => {
   try {
     const ynabAccounts = await fetchAccounts();
@@ -46,9 +51,9 @@ import { match } from "assert";
 
       const pendingTransactions = amexAccount.pendingTransactions
         ? await convertPendingTransactions(
-            amexAccount.pendingTransactions,
-            ynabAccount.id
-          )
+          amexAccount.pendingTransactions,
+          ynabAccount.id
+        )
         : [];
 
       ynabAccount.queuedTransactions = [
@@ -64,9 +69,6 @@ import { match } from "assert";
     readyAccounts.forEach((ynabAccount) => {
       console.log(`${ynabAccount.name} may have some transactions imported`);
     });
-
-    const formatTransaction = (t: TransactionDetail | SaveTransaction) =>
-      `${t.account_id}: $${t.amount! / 1000} at ${t.payee_name} on ${t.date}`;
 
     const unfilteredImportTransactions = readyAccounts
       .map((ynabAccount) => ynabAccount.queuedTransactions)
@@ -112,7 +114,7 @@ import { match } from "assert";
         const dateMatch =
           Math.abs(
             new Date(t.date as string).getTime() -
-              new Date(existingPendingTransaction.date as string).getTime()
+            new Date(existingPendingTransaction.date as string).getTime()
           ) <=
           86400 * 3 * 1000;
 
@@ -165,7 +167,7 @@ import { match } from "assert";
         if (
           existingPendingTransaction.date !== matchedImportTransaction.date ||
           existingPendingTransaction.import_id !==
-            matchedImportTransaction.import_id
+          matchedImportTransaction.import_id
         ) {
           console.log(
             `Pending transaction ${formatTransaction(
@@ -244,7 +246,7 @@ import { match } from "assert";
           console.error("Unable to update stale transaction", e);
         }
       } else {
-        await deleteTransaction(transaction.id);
+        await deleteTransaction(transaction);
       }
     }
 
@@ -254,7 +256,7 @@ import { match } from "assert";
           transaction
         )}`
       );
-      await deleteTransaction(transaction.id);
+      await deleteTransaction(transaction);
     }
 
     console.log(
