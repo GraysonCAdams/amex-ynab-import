@@ -217,8 +217,7 @@ export async function fetchTransactions(): Promise<Account[]> {
   }
 
   console.log("Searching/waiting for OTP prompt... (will choose email)");
-  const authDivSelector =
-    'div[class^="one-identity-authentication__styles__authContainer___"]';
+  const authDivSelector = 'div[class^="_authContainer_"]';
   await page.waitForSelector(authDivSelector);
 
   let html = await page.content();
