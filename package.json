@@ -5,7 +5,7 @@
     "debug": "node --no-warnings=ExperimentalWarning --import=./logError.js --loader ts-node/esm index.ts"
   },
   "dependencies": {
-    "axios": "^1.6.1",
+    "axios": "^1.15.0",
     "cheerio": "^1.0.0-rc.12",
     "csv-parser": "^3.0.0",
     "dateformat": "^5.0.3",
